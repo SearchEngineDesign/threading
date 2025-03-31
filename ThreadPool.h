@@ -65,6 +65,10 @@ public:
         pthread_mutex_unlock(&queueMutex);
     }
 
+    void wake() {
+        pthread_cond_signal(&queueCond);
+    }
+
     ~ThreadPool() {
         pthread_mutex_lock(&queueMutex);
         stop = true;
