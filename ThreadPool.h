@@ -69,6 +69,12 @@ public:
         pthread_cond_signal(&queueCond);
     }
 
+    bool isFull() {
+        if (taskQueue.size() >= THREAD_POOL_SIZE + 10)
+            return true;
+        return false;
+    }
+
     ~ThreadPool() {
         pthread_mutex_lock(&queueMutex);
         stop = true;
