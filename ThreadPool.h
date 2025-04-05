@@ -60,7 +60,8 @@ public:
 
     void submit(void (*func)(void*), void* arg) {
         pthread_mutex_lock(&queueMutex);
-        taskQueue.push(Task{func, arg});
+        if (taskQueue.size() < THREAD_POOL_SIZE * 10)
+            taskQueue.push(Task{func, arg});
         pthread_cond_signal(&queueCond);
         pthread_mutex_unlock(&queueMutex);
     }
