@@ -46,6 +46,7 @@ private:
             // Execute task
             task.func(task.arg);
         }
+        std::cout << "Child thread finished!" << std::endl;
         return nullptr;
     }
 
@@ -74,6 +75,21 @@ public:
         if (taskQueue.size() >= THREAD_POOL_SIZE + 10)
             return true;
         return false;
+    }
+
+    bool alive() {
+        pthread_mutex_lock(&queueMutex);
+        bool live = !(stop && taskQueue.empty());
+        pthread_mutex_unlock(&queueMutex);
+        return live;
+    }
+
+    void shutdown() {
+        pthread_mutex_lock(&queueMutex);
+        stop = true;
+        std::queue<Task>().swap(taskQueue);
+        pthread_cond_signal(&queueCond);
+        pthread_mutex_unlock(&queueMutex);            
     }
 
     ~ThreadPool() {
