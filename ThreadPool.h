@@ -19,6 +19,8 @@ private:
     pthread_cond_t queueCond = PTHREAD_COND_INITIALIZER;
     bool stop = false;
 
+    size_t numThreads;
+
     // Worker thread function
     static void* workerThread(void* arg) {
         ThreadPool* pool = static_cast<ThreadPool*>(arg);
@@ -46,12 +48,12 @@ private:
             // Execute task
             task.func(task.arg);
         }
-        std::cout << "Child thread finished!" << std::endl;
+        // std::cout << "Child thread finished!" << std::endl;
         return nullptr;
     }
 
 public:
-    ThreadPool(size_t numThreads = THREAD_POOL_SIZE) {
+    ThreadPool(size_t numThreads = THREAD_POOL_SIZE): numThreads(numThreads) {
         for (size_t i = 0; i < numThreads; ++i) {
             pthread_t thread;
             pthread_create(&thread, nullptr, workerThread, this);
@@ -61,11 +63,13 @@ public:
 
     void submit(void (*func)(void*), void* arg) {
         pthread_mutex_lock(&queueMutex);
-        if (taskQueue.size() < THREAD_POOL_SIZE * 10)
+        if (taskQueue.size() < numThreads * 10) //!WHY?
             taskQueue.push(Task{func, arg});
         pthread_cond_signal(&queueCond);
         pthread_mutex_unlock(&queueMutex);
     }
+
+    // ?WHY DID YOU ADD THESE FUNCTIONS?
 
     void wake() {
         pthread_cond_signal(&queueCond);
@@ -87,20 +91,19 @@ public:
     void shutdown() {
         pthread_mutex_lock(&queueMutex);
         stop = true;
-        std::queue<Task>().swap(taskQueue);
-        pthread_cond_signal(&queueCond);
-        pthread_mutex_unlock(&queueMutex);            
-    }
+        // std::queue<Task>().swap(taskQueue);
 
-    ~ThreadPool() {
-        pthread_mutex_lock(&queueMutex);
-        stop = true;
+        
         pthread_cond_broadcast(&queueCond);
-        pthread_mutex_unlock(&queueMutex);
-
+        pthread_mutex_unlock(&queueMutex);     
+        
         for (pthread_t thread : workers) {
             pthread_join(thread, nullptr);
         }
+    }
+
+    ~ThreadPool() {
+        shutdown();
 
         pthread_mutex_destroy(&queueMutex);
         pthread_cond_destroy(&queueCond);
