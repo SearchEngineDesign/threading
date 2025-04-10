@@ -48,7 +48,6 @@ private:
             // Execute task
             task.func(task.arg);
         }
-        // std::cout << "Child thread finished!" << std::endl;
         return nullptr;
     }
 
@@ -90,6 +89,7 @@ public:
     }
 
     void shutdown() {
+
         pthread_mutex_lock(&queueMutex);
         stop = true;
         // std::queue<Task>().swap(taskQueue);
@@ -98,16 +98,19 @@ public:
         pthread_cond_broadcast(&queueCond);
         pthread_mutex_unlock(&queueMutex);     
         
-        for (pthread_t thread : workers) {
+        for (pthread_t& thread : workers) {
             pthread_join(thread, nullptr);
         }
+
     }
 
     ~ThreadPool() {
+
         shutdown();
 
         pthread_mutex_destroy(&queueMutex);
         pthread_cond_destroy(&queueCond);
+        
     }
 };
 
