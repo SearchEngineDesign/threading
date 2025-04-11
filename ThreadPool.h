@@ -62,30 +62,9 @@ public:
 
     void submit(void (*func)(void*), void* arg) {
         pthread_mutex_lock(&queueMutex);
-        // if (taskQueue.size() < numThreads * 10) //!WHY?
-            taskQueue.push(Task{func, arg});
+        taskQueue.push(Task{func, arg});
         pthread_cond_signal(&queueCond);
         pthread_mutex_unlock(&queueMutex);
-    }
-
-    // ?WHY DID YOU ADD THESE FUNCTIONS?
-
-    void wake() {
-        pthread_cond_signal(&queueCond);
-    }
-
-    //  this is not thread safe
-    bool isFull() {
-        if (taskQueue.size() >= THREAD_POOL_SIZE + 10)
-            return true;
-        return false;
-    }
-
-    bool alive() {
-        pthread_mutex_lock(&queueMutex);
-        bool live = !(stop && taskQueue.empty());
-        pthread_mutex_unlock(&queueMutex);
-        return live;
     }
 
     void shutdown() {
